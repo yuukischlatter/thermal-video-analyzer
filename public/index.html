@@ -5,191 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thermal Video Analyzer</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js for temperature graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🔥 Thermal Video Analyzer</h1>
-            <div class="status">
-                <span id="connectionStatus" class="status-disconnected">Disconnected</span>
-                <span id="engineStatus" class="status-loading">Loading...</span>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Left Side - Video Section -->
-            <div class="video-section">
-                <!-- Video Container with Overlay -->
-                <div class="video-container">
-                    <video id="thermalVideo" 
-                           controls 
-                           preload="metadata"
-                           crossorigin="anonymous">
-                        <source src="/videos/demo_vid.mp4" type="video/mp4">
-                        <p>Your browser doesn't support video playback.</p>
-                    </video>
-                    
-                    <!-- Canvas overlay for draggable lines -->
-                    <canvas id="lineOverlay"></canvas>
-                    
-                    <!-- Loading indicator -->
-                    <div id="videoLoading" class="loading-overlay">
-                        <div class="spinner"></div>
-                        <p>Loading video...</p>
-                    </div>
-                </div>
-                
-                <!-- Video Controls -->
-                <div class="controls">
-                    <div class="control-group">
-                        <button id="playBtn" class="btn-play" disabled>
-                            <span class="btn-icon">▶</span> Play
-                        </button>
-                        
-                        <button id="prevFrameBtn" class="btn-control" disabled>
-                            <span class="btn-icon">⏮</span>
-                        </button>
-                        
-                        <button id="nextFrameBtn" class="btn-control" disabled>
-                            <span class="btn-icon">⏭</span>
-                        </button>
-                    </div>
-                    
-                    <div class="slider-container">
-                        <input type="range" 
-                               id="frameSlider" 
-                               min="0" 
-                               max="100" 
-                               value="0" 
-                               class="frame-slider"
-                               disabled>
-                        <div class="frame-info">
-                            <span id="frameInfo">Frame: 0 / 0</span>
-                            <span id="timeInfo">Time: 0.0s</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Current Analysis Info -->
-                <div class="analysis-info">
-                    <h3>Current Frame Analysis</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Mouse Position:</label>
-                            <span id="mousePos">x: -, y: -</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Pixel Temperature:</label>
-                            <span id="pixelTemp" class="temperature">-°C</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Line 1 (Blue):</label>
-                            <span id="line1Info">Avg: -°C, Max: -°C, Min: -°C</span>
-                        </div>
-                        <div class="info-item">
-                            <label>Line 2 (Green):</label>
-                            <span id="line2Info">Avg: -°C, Max: -°C, Min: -°C</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Video Section -->
+        <div class="video-section">
+            <div class="video-container">
+                <video id="thermalVideo" controls preload="metadata">
+                    <source src="/videos/demo_vid.mp4" type="video/mp4">
+                    <p>Your browser doesn't support video playback.</p>
+                </video>
+                <canvas id="lineOverlay"></canvas>
             </div>
             
-            <!-- Right Side - Analysis Graphs -->
-            <div class="analysis-section">
-                <!-- Line 1 Temperature Profile -->
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3>Line 1 Temperature Profile</h3>
-                        <div class="line-indicator blue"></div>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart1"></canvas>
-                    </div>
-                </div>
-                
-                <!-- Line 2 Temperature Profile -->
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3>Line 2 Temperature Profile</h3>
-                        <div class="line-indicator green"></div>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart2"></canvas>
-                    </div>
-                </div>
+            <div class="controls">
+                <button id="playBtn">Play</button>
+                <input type="range" id="frameSlider" min="0" max="100" value="0">
+                <span id="frameInfo">Frame: 0 / 0</span>
             </div>
         </div>
         
-        <!-- Instructions Panel -->
-        <div class="instructions">
-            <h4>📖 Instructions</h4>
-            <ul>
-                <li><strong>Drag the colored circles</strong> to reposition analysis lines</li>
-                <li><strong>Blue line (Line 1)</strong> and <strong>Green line (Line 2)</strong> can be positioned anywhere</li>
-                <li><strong>Hover over video</strong> to see pixel temperature</li>
-                <li><strong>Use video controls</strong> to navigate through frames</li>
-                <li><strong>Temperature graphs</strong> update in real-time as you move lines</li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- Error Modal -->
-    <div id="errorModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>⚠️ Error</h3>
-                <button id="closeErrorModal" class="close-btn">&times;</button>
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>Horizontal Line Temperature</h3>
+                <canvas id="chart1"></canvas>
             </div>
-            <div class="modal-body">
-                <p id="errorMessage">An error occurred.</p>
+            
+            <div class="chart-container">
+                <h3>Vertical Line Temperature</h3>
+                <canvas id="chart2"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Video Info Modal -->
-    <div id="videoInfoModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📹 Video Information</h3>
-                <button id="closeVideoInfoModal" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="video-stats">
-                    <div class="stat-item">
-                        <label>Resolution:</label>
-                        <span id="videoResolution">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <label>Frame Rate:</label>
-                        <span id="videoFPS">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <label>Total Frames:</label>
-                        <span id="videoFrames">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <label>Duration:</label>
-                        <span id="videoDuration">-</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <span>Thermal Video Analyzer v1.0</span>
-            <button id="videoInfoBtn" class="btn-info">📹 Video Info</button>
-            <span id="performanceInfo">Processing: -ms</span>
-        </div>
-    </footer>
-
-    <!-- Load main application script -->
     <script src="app.js"></script>
 </body>
 </html>
