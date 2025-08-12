@@ -22,17 +22,17 @@ const wss = new WebSocket.Server({ server });
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const VIDEO_PATH = './videos/demo_vid.avi';
-const CSV_PATH = './data/temp_mapping.csv';
+const VIDEO_PATH = '../videos/demo_vid.avi';
+const CSV_PATH = '../data/temp_mapping.csv';
 
 // Global state
 let videoInfo = null;
 let isEngineReady = false;
 
 // Serve static files
-app.use(express.static('public'));
-app.use('/videos', express.static('videos'));
-app.use('/data', express.static('data'));
+app.use(express.static('../public'));
+app.use('/videos', express.static('../videos'));
+app.use('/data', express.static('../data'));
 
 // Initialize thermal engine
 async function initializeEngine() {
