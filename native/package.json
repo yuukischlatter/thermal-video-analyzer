@@ -1,0 +1,12 @@
+{
+  "name": "thermal-engine-native",
+  "version": "1.0.0",
+  "description": "C++ thermal analysis engine",
+  "main": "build/Release/thermal_engine.node",
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  },
+  "devDependencies": {
+    "node-gyp": "^10.0.0"
+  }
+}

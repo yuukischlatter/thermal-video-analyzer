@@ -1,0 +1,347 @@
+# Thermal Video Analyzer - .gitignore
+
+# =====================================
+# Node.js Dependencies
+# =====================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# =====================================
+# Native Module Build Files
+# =====================================
+native/build/
+native/Release/
+native/Debug/
+native/*.node
+native/*.dylib
+native/*.so
+native/*.dll
+
+# node-gyp
+native/.node-gyp/
+native/prebuilds/
+
+# Visual Studio build artifacts (Windows)
+native/*.vcxproj.user
+native/*.vcxproj.filters
+native/*.sln
+native/build/
+native/out/
+
+# =====================================
+# Video and Data Files (Large Files)
+# =====================================
+# Uncomment these if you want to exclude large files from git
+videos/*.avi
+videos/*.mp4
+videos/*.mov
+videos/*.mkv
+videos/*.wmv
+videos/*.webm
+# videos/demo_vid.avi  # Uncomment to exclude your demo video
+
+# Large CSV files (uncomment if your CSV is very large)
+# data/*.csv
+# data/temp_mapping.csv
+
+# =====================================
+# Operating System Files
+# =====================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =====================================
+# IDE and Editor Files
+# =====================================
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Visual Studio
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+!*.svg
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =====================================
+# Logs and Runtime Files
+# =====================================
+logs/
+*.log
+log/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# =====================================
+# Environment and Configuration
+# =====================================
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# dotenv environment variable files
+.env.example
+
+# =====================================
+# Build and Distribution
+# =====================================
+dist/
+build/
+out/
+target/
+
+# Generated documentation
+docs/api/
+docs/build/
+
+# =====================================
+# Temporary and Cache Files
+# =====================================
+tmp/
+temp/
+cache/
+.cache/
+.tmp/
+
+# Webpack
+.webpack/
+
+# Parcel
+.parcel-cache/
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+dist/
+
+# Gatsby
+.cache/
+public/
+
+# =====================================
+# Dependency Directories
+# =====================================
+jspm_packages/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# =====================================
+# Optional: OpenCV Installation Files
+# =====================================
+# If you include OpenCV locally (not recommended for git)
+opencv/
+OpenCV/
+opencv-*/
+
+# =====================================
+# Test and Development Files
+# =====================================
+test-videos/
+test-data/
+experiments/
+sandbox/
+*.test.js.snap
+
+# Jest
+coverage/
+
+# =====================================
+# Backup Files
+# =====================================
+*.bak
+*.backup
+*.swp
+*.swo
+*~.nib
+
+# =====================================
+# Python (if you have any Python scripts)
+# =====================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =====================================
+# Archive Files
+# =====================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# =====================================
+# Project Specific
+# =====================================
+# Performance analysis files
+*.prof
+*.trace
+
+# Generated thermal analysis exports
+exports/
+analysis-results/
+thermal-exports/
+
+# Screenshot/image captures
+screenshots/
+captures/
+*.png.bak
+*.jpg.bak
+
+# =====================================
+# Security
+# =====================================
+# Private keys
+*.pem
+*.key
+*.p12
+*.p8
+*.pfx
+
+# Certificate files
+*.crt
+*.cer
+*.der
+
+# =====================================
+# Keep These Files (Override exclusions)
+# =====================================
+# Force include important config files
+!.gitignore
+!.gitkeep
+!README.md
+!package.json
+!binding.gyp
+
+# Keep example/demo files (small ones)
+!data/example_temp_mapping.csv
+!videos/small_demo.mp4
+
+# Keep documentation
+!docs/README.md
+!docs/*.md
