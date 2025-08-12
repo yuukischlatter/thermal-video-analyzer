@@ -9,31 +9,35 @@
 </head>
 <body>
     <div class="container">
-        <!-- Video Section -->
-        <div class="video-section">
-            <div class="video-container">
-                <video id="thermalVideo" controls preload="metadata">
-                    <source src="/videos/demo_vid.mp4" type="video/mp4">
-                    <p>Your browser doesn't support video playback.</p>
-                </video>
-                <canvas id="lineOverlay"></canvas>
+        <div class="main-content">
+            <!-- Video and Horizontal Chart Column -->
+            <div class="video-column">
+                <!-- Video Section -->
+                <div class="video-section">
+                    <div class="video-container">
+                        <video id="thermalVideo" controls preload="metadata">
+                            <source src="/videos/demo_vid.mp4" type="video/mp4">
+                            <p>Your browser doesn't support video playback.</p>
+                        </video>
+                        <canvas id="lineOverlay"></canvas>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="playBtn">Play</button>
+                        <input type="range" id="frameSlider" min="0" max="100" value="0">
+                        <span id="frameInfo">Frame: 0 / 0</span>
+                    </div>
+                </div>
+                
+                <!-- Horizontal Chart (below video) -->
+                <div class="chart-container horizontal-chart">
+                    <h3>Horizontal Line Temperature</h3>
+                    <canvas id="chart1"></canvas>
+                </div>
             </div>
             
-            <div class="controls">
-                <button id="playBtn">Play</button>
-                <input type="range" id="frameSlider" min="0" max="100" value="0">
-                <span id="frameInfo">Frame: 0 / 0</span>
-            </div>
-        </div>
-        
-        <!-- Charts Section -->
-        <div class="charts-section">
-            <div class="chart-container">
-                <h3>Horizontal Line Temperature</h3>
-                <canvas id="chart1"></canvas>
-            </div>
-            
-            <div class="chart-container">
+            <!-- Vertical Chart (right of video) -->
+            <div class="chart-container vertical-chart">
                 <h3>Vertical Line Temperature</h3>
                 <canvas id="chart2"></canvas>
             </div>

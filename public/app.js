@@ -6,9 +6,9 @@ let ctx;
 let chart1, chart2;
 let videoInfo = {};
 
-// Line positions
-let line1 = { x1: 50, y1: 100, x2: 300, y2: 150 };
-let line2 = { x1: 100, y1: 50, x2: 150, y2: 300 };
+// Line positions (will be calculated relative to canvas size)
+let line1 = { x1: 0, y1: 0, x2: 0, y2: 0 };
+let line2 = { x1: 0, y1: 0, x2: 0, y2: 0 };
 
 // Dragging state
 let dragging = null;
@@ -26,6 +26,15 @@ window.addEventListener('DOMContentLoaded', () => {
     setupCanvas();
     setupCharts();
     setupControls();
+    
+    // Wait for video metadata to calculate proper sizes
+    video.addEventListener('loadedmetadata', () => {
+        setTimeout(() => {
+            adjustCanvasSize();
+            adjustLinePositions();
+            drawLines();
+        }, 100);
+    });
 });
 
 // Initialize DOM elements
@@ -79,9 +88,12 @@ function handleVideoInfo(data) {
     
     document.getElementById('frameSlider').max = videoInfo.frames - 1;
     
-    adjustCanvasSize();
-    adjustLinePositions();
-    drawLines();
+    // Wait a bit for the video container to be properly sized
+    setTimeout(() => {
+        adjustCanvasSize();
+        adjustLinePositions();
+        drawLines();
+    }, 200);
     
     document.getElementById('playBtn').disabled = !isEngineReady;
     document.getElementById('frameSlider').disabled = !isEngineReady;
@@ -93,8 +105,8 @@ function handleVideoInfo(data) {
 
 // Handle analysis results
 function handleAnalysisResult(data) {
-    updateChart(chart1, data.line1.temperatures, '#2563eb');
-    updateChart(chart2, data.line2.temperatures, '#059669');
+    updateChart(chart1, data.line1.temperatures, '#2563eb', false); // Horizontal chart
+    updateChart(chart2, data.line2.temperatures, '#059669', true);  // Vertical chart
 }
 
 // Setup video element
@@ -123,7 +135,8 @@ function setupCanvas() {
 
 // Setup Chart.js charts
 function setupCharts() {
-    const chartConfig = {
+    // Horizontal Chart (chart1) - Normal orientation
+    chart1 = new Chart(document.getElementById('chart1'), {
         type: 'line',
         data: {
             labels: [],
@@ -131,34 +144,82 @@ function setupCharts() {
                 data: [],
                 borderWidth: 2,
                 fill: false,
-                pointRadius: 1
+                pointRadius: 1,
+                borderColor: '#2563eb'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                x: { title: { display: true, text: 'Position (%)' } },
-                y: { title: { display: true, text: 'Temperature (°C)' } }
-            },
             plugins: { legend: { display: false } },
-            animation: { duration: 0 }
-        }
-    };
-    
-    chart1 = new Chart(document.getElementById('chart1'), {
-        ...chartConfig,
-        data: {
-            ...chartConfig.data,
-            datasets: [{ ...chartConfig.data.datasets[0], borderColor: '#2563eb' }]
+            animation: { duration: 0 },
+            interaction: { intersect: false, mode: 'index' },
+            scales: {
+                x: { 
+                    type: 'linear',
+                    title: { display: true, text: 'Position (%)' },
+                    min: 0,
+                    max: 100,
+                    ticks: { 
+                        stepSize: 10,
+                        maxTicksLimit: 11
+                    }
+                },
+                y: { 
+                    title: { display: true, text: 'Temperature (°C)' },
+                    min: 600,
+                    max: 1500,
+                    ticks: { 
+                        stepSize: 100,
+                        maxTicksLimit: 10
+                    }
+                }
+            }
         }
     });
     
+    // Vertical Chart (chart2) - Swapped axes (Temperature on X, Position on Y)
     chart2 = new Chart(document.getElementById('chart2'), {
-        ...chartConfig,
+        type: 'line',
         data: {
-            ...chartConfig.data,
-            datasets: [{ ...chartConfig.data.datasets[0], borderColor: '#059669' }]
+            labels: [],
+            datasets: [{
+                data: [],
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 1,
+                borderColor: '#059669'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            animation: { duration: 0 },
+            interaction: { intersect: false, mode: 'index' },
+            indexAxis: 'y', // This swaps the axes
+            scales: {
+                x: { 
+                    title: { display: true, text: 'Temperature (°C)' },
+                    min: 600,
+                    max: 1500,
+                    ticks: { 
+                        stepSize: 100,
+                        maxTicksLimit: 10
+                    }
+                },
+                y: { 
+                    type: 'linear',
+                    title: { display: true, text: 'Position (% from top)' },
+                    min: 0,
+                    max: 100,
+                    ticks: { 
+                        stepSize: 10,
+                        maxTicksLimit: 11
+                    },
+                    reverse: true // 0% at bottom, 100% at top
+                }
+            }
         }
     });
 }
@@ -304,21 +365,47 @@ function drawEndpoint(x, y, color) {
 }
 
 function adjustCanvasSize() {
-    // Set canvas to exact video size
-    canvas.width = 908;
-    canvas.height = 1200;
-    adjustLinePositions();
+    // Get the actual rendered size of the video element
+    const videoRect = video.getBoundingClientRect();
+    const videoContainer = video.parentElement.getBoundingClientRect();
+    
+    // Calculate the actual video display size within the container
+    const videoAspectRatio = 908 / 1200;
+    const containerAspectRatio = videoContainer.width / videoContainer.height;
+    
+    let displayWidth, displayHeight;
+    
+    if (containerAspectRatio > videoAspectRatio) {
+        // Container is wider than video aspect ratio, video height fills container
+        displayHeight = videoContainer.height;
+        displayWidth = displayHeight * videoAspectRatio;
+    } else {
+        // Container is taller than video aspect ratio, video width fills container
+        displayWidth = videoContainer.width;
+        displayHeight = displayWidth / videoAspectRatio;
+    }
+    
+    // Set canvas to match the actual video display size
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+    
+    // Center canvas in container if needed
+    const leftOffset = (videoContainer.width - displayWidth) / 2;
+    const topOffset = (videoContainer.height - displayHeight) / 2;
+    
+    canvas.style.left = leftOffset + 'px';
+    canvas.style.top = topOffset + 'px';
 }
 
 function adjustLinePositions() {
     if (canvas.width && canvas.height) {
-        // Horizontal line
+        // Horizontal line (default position)
         line1.x1 = canvas.width * 0.1;
         line1.y1 = canvas.height * 0.5;
         line1.x2 = canvas.width * 0.9;
         line1.y2 = canvas.height * 0.5;
         
-        // Vertical line
+        // Vertical line (default position)
         line2.x1 = canvas.width * 0.5;
         line2.y1 = canvas.height * 0.1;
         line2.x2 = canvas.width * 0.5;
@@ -356,8 +443,9 @@ function requestAnalysis() {
 }
 
 function convertToVideoCoords(line) {
-    const scaleX = (videoInfo.width || 1) / canvas.width;
-    const scaleY = (videoInfo.height || 1) / canvas.height;
+    // Calculate scale factors based on actual video dimensions vs canvas size
+    const scaleX = (videoInfo.width || 908) / canvas.width;
+    const scaleY = (videoInfo.height || 1200) / canvas.height;
     
     return {
         x1: Math.round(line.x1 * scaleX),
@@ -367,21 +455,44 @@ function convertToVideoCoords(line) {
     };
 }
 
-function updateChart(chart, temperatures, color) {
+function updateChart(chart, temperatures, color, isVertical = false) {
     if (!temperatures || temperatures.length === 0) return;
     
-    const labels = temperatures.map((_, index) => 
-        Math.round((index / (temperatures.length - 1)) * 100)
-    );
+    if (isVertical) {
+        // Vertical chart: Temperature on X-axis, Position on Y-axis
+        // Reverse temperatures so bottom of line (index 0) = bottom of chart (0%)
+        const reversedTemps = [...temperatures].reverse();
+        
+        // Create position labels from 0% to 100%
+        const positions = reversedTemps.map((_, index) => 
+            Math.round((index / (reversedTemps.length - 1)) * 100)
+        );
+        
+        // For indexAxis: 'y' charts, we need to structure data differently
+        chart.data.labels = positions;
+        chart.data.datasets[0].data = reversedTemps;
+    } else {
+        // Horizontal chart: Position on X-axis, Temperature on Y-axis
+        const positions = temperatures.map((_, index) => 
+            Math.round((index / (temperatures.length - 1)) * 100)
+        );
+        
+        chart.data.labels = positions;
+        chart.data.datasets[0].data = temperatures;
+    }
     
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = temperatures;
     chart.data.datasets[0].borderColor = color;
     chart.update('none');
 }
 
 // Handle window resize
 window.addEventListener('resize', () => {
-    adjustCanvasSize();
-    drawLines();
+    // Debounce the resize to avoid excessive recalculations
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(() => {
+        adjustCanvasSize();
+        adjustLinePositions();
+        drawLines();
+        requestAnalysis();
+    }, 250);
 });
