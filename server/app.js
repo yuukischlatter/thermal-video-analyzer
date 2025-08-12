@@ -2,6 +2,11 @@ const express = require('express');
 const WebSocket = require('ws');
 const path = require('path');
 const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+
+// Set FFmpeg path to bundled binary
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 // Load the native C++ module
 let thermalEngine;
@@ -24,15 +29,121 @@ const wss = new WebSocket.Server({ server });
 const PORT = process.env.PORT || 3000;
 const VIDEO_PATH = '../videos/demo_vid.avi';
 const CSV_PATH = '../data/temp_mapping.csv';
+const TEMP_MP4_PATH = path.join(__dirname, '..', 'temp', 'demo_vid.mp4');
 
 // Global state
 let videoInfo = null;
 let isEngineReady = false;
 
+// Check if FFmpeg is installed
+function checkFFmpegInstalled() {
+    return new Promise((resolve, reject) => {
+        ffmpeg.getAvailableFormats((err, formats) => {
+            if (err) {
+                reject(new Error('FFmpeg not found. Please install FFmpeg on your system.'));
+            } else {
+                console.log('✓ FFmpeg is available');
+                resolve();
+            }
+        });
+    });
+}
+
+// Convert AVI to MP4
+function convertVideoToMP4() {
+    return new Promise((resolve, reject) => {
+        console.log('Converting AVI to MP4 for browser compatibility...');
+        console.log(`Input: ${VIDEO_PATH}`);
+        console.log(`Output: ${TEMP_MP4_PATH}`);
+        
+        // Delete existing temp file if it exists
+        if (fs.existsSync(TEMP_MP4_PATH)) {
+            fs.unlinkSync(TEMP_MP4_PATH);
+            console.log('✓ Deleted existing temp MP4 file');
+        }
+        
+        // Check if input file exists
+        if (!fs.existsSync(VIDEO_PATH)) {
+            reject(new Error(`Input video file not found: ${VIDEO_PATH}`));
+            return;
+        }
+        
+        const startTime = Date.now();
+        
+        ffmpeg(VIDEO_PATH)
+            .output(TEMP_MP4_PATH)
+            // Video codec settings for frame-perfect conversion
+            .videoCodec('libx264')
+            .audioCodec('aac')
+            // Preserve frame rate and frame count
+            .fps(25) // Match the original FPS from your logs
+            .format('mp4')
+            // Quality settings - balance between size and quality
+            .videoBitrate('2000k')
+            .audioFrequency(44100)
+            .audioChannels(2)
+            // Additional options for frame preservation
+            .addOption('-vsync', 'cfr') // Constant frame rate
+            .addOption('-avoid_negative_ts', 'make_zero')
+            .addOption('-fflags', '+genpts')
+            // Progress logging
+            .on('start', (commandLine) => {
+                console.log('FFmpeg conversion started...');
+            })
+            .on('progress', (progress) => {
+                if (progress.percent) {
+                    process.stdout.write(`\rConversion progress: ${Math.round(progress.percent)}%`);
+                }
+            })
+            .on('end', () => {
+                const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+                console.log(`\n✓ Video conversion completed in ${duration}s`);
+                
+                // Verify the output file exists and has content
+                if (fs.existsSync(TEMP_MP4_PATH)) {
+                    const stats = fs.statSync(TEMP_MP4_PATH);
+                    console.log(`✓ Output file size: ${(stats.size / (1024 * 1024)).toFixed(1)}MB`);
+                    resolve();
+                } else {
+                    reject(new Error('Conversion completed but output file not found'));
+                }
+            })
+            .on('error', (err) => {
+                console.log(`\n✗ Video conversion failed: ${err.message}`);
+                reject(err);
+            })
+            .run();
+    });
+}
+
+// Clean up temporary files
+function cleanupTempFiles() {
+    try {
+        if (fs.existsSync(TEMP_MP4_PATH)) {
+            fs.unlinkSync(TEMP_MP4_PATH);
+            console.log('✓ Cleaned up temporary MP4 file');
+        }
+    } catch (error) {
+        console.error('Warning: Failed to cleanup temp files:', error.message);
+    }
+}
+
 // Serve static files
 app.use(express.static('../public'));
 app.use('/videos', express.static('../videos'));
 app.use('/data', express.static('../data'));
+
+// Serve the converted MP4 file
+app.get('/videos/demo_vid.mp4', (req, res) => {
+    if (fs.existsSync(TEMP_MP4_PATH)) {
+        res.sendFile(TEMP_MP4_PATH);
+    } else {
+        res.status(404).json({ error: 'Converted video file not found' });
+    }
+});
+
+// Handle favicon to prevent 404 errors
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // Initialize thermal engine
 async function initializeEngine() {
@@ -317,7 +428,8 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         engineReady: isEngineReady,
         timestamp: Date.now(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        tempFileExists: fs.existsSync(TEMP_MP4_PATH)
     });
 });
 
@@ -333,15 +445,24 @@ app.use((err, req, res, next) => {
 // Start server
 async function startServer() {
     try {
-        // Initialize thermal engine first
+        console.log('🚀 Starting Thermal Video Analyzer Server...');
+        
+        // Step 1: Check FFmpeg
+        await checkFFmpegInstalled();
+        
+        // Step 2: Convert video
+        await convertVideoToMP4();
+        
+        // Step 3: Initialize thermal engine
         await initializeEngine();
         
-        // Start HTTP server
+        // Step 4: Start HTTP server
         server.listen(PORT, () => {
             console.log(`\n🚀 Thermal Video Analyzer Server running on:`);
             console.log(`   http://localhost:${PORT}`);
             console.log(`\n📁 Serving files from:`);
-            console.log(`   Video: ${VIDEO_PATH}`);
+            console.log(`   Analysis Video: ${VIDEO_PATH} (AVI - for C++ analysis)`);
+            console.log(`   Display Video: ${TEMP_MP4_PATH} (MP4 - for browser)`);
             console.log(`   Mapping: ${CSV_PATH}`);
             console.log(`\n🔌 WebSocket endpoint: ws://localhost:${PORT}`);
             console.log(`\n✅ Ready for thermal analysis!`);
@@ -349,25 +470,54 @@ async function startServer() {
         
     } catch (error) {
         console.error('Failed to start server:', error);
+        cleanupTempFiles();
         process.exit(1);
     }
 }
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-    console.log('\nShutting down server...');
+function shutdown(signal) {
+    console.log(`\nReceived ${signal}, shutting down gracefully...`);
+    
+    // Close WebSocket server
+    wss.close(() => {
+        console.log('✓ WebSocket server closed');
+    });
+    
+    // Close HTTP server
     server.close(() => {
-        console.log('Server stopped.');
+        console.log('✓ HTTP server closed');
+        
+        // Cleanup temp files
+        cleanupTempFiles();
+        
+        console.log('✓ Server stopped gracefully');
         process.exit(0);
     });
+    
+    // Force exit after 10 seconds
+    setTimeout(() => {
+        console.log('⚠️  Force exit after timeout');
+        cleanupTempFiles();
+        process.exit(1);
+    }, 10000);
+}
+
+// Register shutdown handlers
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    cleanupTempFiles();
+    process.exit(1);
 });
 
-process.on('SIGTERM', () => {
-    console.log('\nReceived SIGTERM, shutting down...');
-    server.close(() => {
-        console.log('Server stopped.');
-        process.exit(0);
-    });
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    cleanupTempFiles();
+    process.exit(1);
 });
 
 // Start the server
